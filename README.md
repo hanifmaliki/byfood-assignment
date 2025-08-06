@@ -59,6 +59,60 @@ byfood-assignment/
 - Go (v1.21 or higher)
 - Git
 
+## Environment Variables
+
+### Setting Up Environment Variables
+
+1. **Root Level Configuration:**
+   ```bash
+   cp env.example .env
+   # Edit .env with your specific values
+   ```
+
+2. **Backend Configuration:**
+   ```bash
+   cd backend
+   cp env.example .env
+   # Edit .env with your backend-specific values
+   ```
+
+3. **Frontend Configuration:**
+   ```bash
+   cd frontend
+   cp env.example .env.local
+   # Edit .env.local with your frontend-specific values
+   ```
+
+### Key Environment Variables
+
+#### Backend (.env)
+```bash
+# Server Configuration
+PORT=8080
+HOST=localhost
+
+# Database Configuration
+DB_TYPE=sqlite
+DB_PATH=library.db
+
+# Security Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+```
+
+#### Frontend (.env.local)
+```bash
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_VERSION=v1
+
+# Application Configuration
+NEXT_PUBLIC_APP_NAME="Library Management System"
+NEXT_PUBLIC_DEBUG=true
+```
+
 ## Quick Start
 
 ### 1. Clone the repository
@@ -67,18 +121,26 @@ git clone <repository-url>
 cd byfood-assignment
 ```
 
-### 2. Backend Setup
+### 2. Set up environment variables
+```bash
+cp env.example .env
+# Edit .env with your configuration
+```
+
+### 3. Backend Setup
 ```bash
 cd backend
+cp env.example .env
 go mod tidy
 go run cmd/main.go
 ```
 
 The backend will start on `http://localhost:8080`
 
-### 3. Frontend Setup
+### 4. Frontend Setup
 ```bash
 cd frontend
+cp env.example .env.local
 npm install
 npm run dev
 ```
@@ -189,6 +251,27 @@ Once the backend is running, you can access the Swagger documentation at:
 - Uses Context API for state management
 - Form validation with visual feedback
 - Responsive design with Tailwind CSS
+
+## Environment Configuration
+
+### Development
+- Set `NODE_ENV=development`
+- Enable debug mode: `NEXT_PUBLIC_DEBUG=true`
+- Use local database: `DB_PATH=library.db`
+
+### Production
+- Set `NODE_ENV=production`
+- Disable debug mode: `NEXT_PUBLIC_DEBUG=false`
+- Use production database
+- Set proper CORS origins
+- Configure rate limiting
+
+### Security Notes
+- **Always change default JWT secrets** in production
+- **Use strong passwords** for database connections
+- **Enable HTTPS** in production
+- **Configure proper CORS** origins
+- **Set up rate limiting** for API endpoints
 
 ## Contributing
 
