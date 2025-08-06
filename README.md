@@ -354,6 +354,97 @@ Once the backend is running, you can access the Swagger documentation at:
 
 The application uses GORM's auto-migration feature. Tables will be created automatically when the application starts.
 
+### Migration System
+
+The application uses **gormigrate** with **timestamp-based migration naming** for better collaboration and chronological ordering.
+
+#### Migration Naming Convention
+
+```
+Format: YYYYMMDDHHMMSS_descriptive_name
+Example: 20241201000000_create_books_table
+```
+
+**Benefits:**
+- ✅ Prevents conflicts when multiple developers create migrations
+- ✅ Ensures chronological order
+- ✅ Clear timestamp for when migration was created
+- ✅ Descriptive names for easy identification
+
+#### Available Migrations
+
+| Timestamp | Name | Description |
+|-----------|------|-------------|
+| `20241201000000` | `create_books_table` | Creates the books table with basic structure |
+| `20241201000001` | `add_indexes_to_books` | Adds performance indexes for title, author, year, ISBN, created_at |
+| `20241201000002` | `add_soft_delete_to_books` | Adds `deleted_at` column for soft deletes |
+
+#### Migration Commands
+
+```bash
+# Run migrations
+make migrate
+
+# Rollback last migration
+make rollback
+
+# Rollback to specific migration
+make rollback-to id=20241201000001_add_indexes_to_books
+
+# Check migration status
+make status
+
+# Show applied migrations
+make applied
+
+# Reset database (rollback all + migrate)
+make db-reset
+```
+
+#### Creating New Migrations
+
+Use the migration generator script:
+
+```bash
+# Generate a new migration
+./scripts/generate_migration.sh add_user_table
+
+# This creates: 20241201143000_add_user_table.go
+```
+
+**Manual Steps:**
+1. Edit the generated migration file
+2. Add the migration to `migration_manager.go`
+3. Test with `make migrate`
+4. Rollback if needed with `make rollback`
+
+#### Migration File Structure
+
+```go
+// 20241201143000_add_user_table.go
+package migrations
+
+import (
+    "github.com/go-gormigrate/gormigrate/v2"
+    "gorm.io/gorm"
+)
+
+// AddUserTable adds user table
+func AddUserTable() *gormigrate.Migration {
+    return &gormigrate.Migration{
+        ID: "20241201143000_add_user_table",
+        Migrate: func(tx *gorm.DB) error {
+            // Migration logic
+            return nil
+        },
+        Rollback: func(tx *gorm.DB) error {
+            // Rollback logic
+            return nil
+        },
+    }
+}
+```
+
 ### Manual Database Operations
 
 #### PostgreSQL
@@ -366,6 +457,9 @@ psql -h localhost -U postgres -d library_db
 
 # View table structure
 \d books
+
+# View migration history
+SELECT * FROM schema_migrations ORDER BY id;
 ```
 
 #### SQLite
@@ -378,6 +472,9 @@ sqlite3 library.db
 
 # View table structure
 .schema books
+
+# View migration history
+SELECT * FROM schema_migrations ORDER BY id;
 ```
 
 ## Contributing

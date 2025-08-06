@@ -7,6 +7,5 @@
 .env.test
 .env.production
 
-# Executables
+# Executable
 main
-migrate

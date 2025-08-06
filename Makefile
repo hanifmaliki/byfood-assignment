@@ -86,9 +86,9 @@ rollback-to:
 	@if [ -z "$(id)" ]; then \
 		echo "❌ Migration ID is required. Usage: make rollback-to id=MIGRATION_ID"; \
 		echo "Available migrations:"; \
-		echo "  001_create_books_table"; \
-		echo "  002_add_indexes_to_books"; \
-		echo "  003_add_soft_delete_to_books"; \
+		echo "  20241201000000_create_books_table"; \
+		echo "  20241201000001_add_indexes_to_books"; \
+		echo "  20241201000002_add_soft_delete_to_books"; \
 		exit 1; \
 	fi
 	@echo "⏪ Rolling back to migration: $(id)"
@@ -197,9 +197,9 @@ test-api:
 migration-status: status
 	@echo ""
 	@echo "📋 Available migrations:"
-	@echo "  001_create_books_table"
-	@echo "  002_add_indexes_to_books"
-	@echo "  003_add_soft_delete_to_books"
+	@echo "  20241201000000_create_books_table"
+	@echo "  20241201000001_add_indexes_to_books"
+	@echo "  20241201000002_add_soft_delete_to_books"
 
 migration-help:
 	@echo "🔄 Migration Commands:"
@@ -211,6 +211,6 @@ migration-help:
 	@echo "  make db-reset                   # Reset database (rollback all + migrate)"
 	@echo ""
 	@echo "📋 Available Migration IDs:"
-	@echo "  001_create_books_table"
-	@echo "  002_add_indexes_to_books"
-	@echo "  003_add_soft_delete_to_books" 
+	@echo "  20241201000000_create_books_table"
+	@echo "  20241201000001_add_indexes_to_books"
+	@echo "  20241201000002_add_soft_delete_to_books" 

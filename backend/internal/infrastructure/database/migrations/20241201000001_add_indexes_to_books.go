@@ -8,7 +8,7 @@ import (
 // AddIndexesToBooks adds performance indexes to the books table
 func AddIndexesToBooks() *gormigrate.Migration {
 	return &gormigrate.Migration{
-		ID: "002_add_indexes_to_books",
+		ID: "20241201000001_add_indexes_to_books",
 		Migrate: func(tx *gorm.DB) error {
 			indexes := []string{
 				"CREATE INDEX IF NOT EXISTS idx_books_title ON books(title)",
