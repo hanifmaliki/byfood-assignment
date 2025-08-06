@@ -7,6 +7,7 @@ import (
 	"library-management-system/internal/domain/entities"
 	"library-management-system/internal/infrastructure/config"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -53,6 +54,24 @@ func NewDatabase() (*Database, error) {
 			return nil, err
 		}
 		log.Printf("Connected to SQLite database: %s", cfg.Database.Path)
+	case "postgres":
+		// Build PostgreSQL connection string
+		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			cfg.Database.Host,
+			cfg.Database.Port,
+			cfg.Database.User,
+			cfg.Database.Password,
+			cfg.Database.Name,
+			cfg.Database.SSLMode,
+		)
+
+		db, err = gorm.Open(postgres.Open(dsn), gormConfig)
+		if err != nil {
+			log.Printf("Failed to connect to PostgreSQL database: %v", err)
+			return nil, err
+		}
+		log.Printf("Connected to PostgreSQL database: %s:%s/%s",
+			cfg.Database.Host, cfg.Database.Port, cfg.Database.Name)
 	default:
 		return nil, fmt.Errorf("unsupported database type: %s", cfg.Database.Type)
 	}

@@ -43,7 +43,7 @@ byfood-assignment/
 ### Backend (Golang - Clean Architecture)
 - 📖 RESTful API for book management
 - 🔗 URL cleanup and redirection service
-- 🗄️ SQLite database integration
+- 🗄️ PostgreSQL/SQLite database integration
 - ✅ Input validation
 - 📝 Comprehensive logging
 - 📚 Swagger API documentation
@@ -58,6 +58,47 @@ byfood-assignment/
 - Node.js (v18 or higher)
 - Go (v1.21 or higher)
 - Git
+- PostgreSQL (recommended) or SQLite
+
+## Database Setup
+
+### Option 1: PostgreSQL (Recommended)
+
+1. **Install PostgreSQL:**
+   ```bash
+   # macOS
+   brew install postgresql
+   brew services start postgresql
+   
+   # Ubuntu
+   sudo apt-get install postgresql postgresql-contrib
+   sudo systemctl start postgresql
+   
+   # CentOS
+   sudo yum install postgresql postgresql-server
+   sudo systemctl start postgresql
+   ```
+
+2. **Run the PostgreSQL setup script:**
+   ```bash
+   ./setup-postgres.sh
+   ```
+
+3. **Configure environment variables:**
+   ```bash
+   cp env.example .env
+   # Edit .env with your PostgreSQL credentials
+   ```
+
+### Option 2: SQLite (Development Only)
+
+1. **Configure environment variables:**
+   ```bash
+   cp env.example .env
+   # Edit .env to use SQLite
+   DB_TYPE=sqlite
+   DB_PATH=library.db
+   ```
 
 ## Environment Variables
 
@@ -85,15 +126,37 @@ byfood-assignment/
 
 ### Key Environment Variables
 
-#### Backend (.env)
+#### PostgreSQL Configuration (.env)
 ```bash
-# Server Configuration
-PORT=8080
-HOST=localhost
+# Database Configuration
+DB_TYPE=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=your_password_here
+DB_NAME=library_db
+DB_SSL_MODE=disable
 
+# Server Configuration
+BACKEND_PORT=8080
+BACKEND_HOST=localhost
+
+# Security Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+```
+
+#### SQLite Configuration (.env)
+```bash
 # Database Configuration
 DB_TYPE=sqlite
 DB_PATH=library.db
+
+# Server Configuration
+BACKEND_PORT=8080
+HOST=localhost
 
 # Security Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -127,7 +190,19 @@ cp env.example .env
 # Edit .env with your configuration
 ```
 
-### 3. Backend Setup
+### 3. Set up database
+
+#### For PostgreSQL:
+```bash
+./setup-postgres.sh
+```
+
+#### For SQLite:
+```bash
+# No additional setup needed - SQLite file will be created automatically
+```
+
+### 4. Backend Setup
 ```bash
 cd backend
 cp env.example .env
@@ -137,7 +212,7 @@ go run cmd/main.go
 
 The backend will start on `http://localhost:8080`
 
-### 4. Frontend Setup
+### 5. Frontend Setup
 ```bash
 cd frontend
 cp env.example .env.local
@@ -257,14 +332,15 @@ Once the backend is running, you can access the Swagger documentation at:
 ### Development
 - Set `NODE_ENV=development`
 - Enable debug mode: `NEXT_PUBLIC_DEBUG=true`
-- Use local database: `DB_PATH=library.db`
+- Use local database: `DB_PATH=library.db` (SQLite) or configure PostgreSQL
 
 ### Production
 - Set `NODE_ENV=production`
 - Disable debug mode: `NEXT_PUBLIC_DEBUG=false`
-- Use production database
+- Use production database (PostgreSQL recommended)
 - Set proper CORS origins
 - Configure rate limiting
+- Enable SSL for PostgreSQL: `DB_SSL_MODE=require`
 
 ### Security Notes
 - **Always change default JWT secrets** in production
@@ -272,6 +348,37 @@ Once the backend is running, you can access the Swagger documentation at:
 - **Enable HTTPS** in production
 - **Configure proper CORS** origins
 - **Set up rate limiting** for API endpoints
+- **Use SSL connections** for PostgreSQL in production
+
+## Database Migration
+
+The application uses GORM's auto-migration feature. Tables will be created automatically when the application starts.
+
+### Manual Database Operations
+
+#### PostgreSQL
+```bash
+# Connect to database
+psql -h localhost -U postgres -d library_db
+
+# View tables
+\dt
+
+# View table structure
+\d books
+```
+
+#### SQLite
+```bash
+# Connect to database
+sqlite3 library.db
+
+# View tables
+.tables
+
+# View table structure
+.schema books
+```
 
 ## Contributing
 
