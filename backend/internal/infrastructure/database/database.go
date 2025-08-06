@@ -86,10 +86,10 @@ func NewDatabase() (*Database, error) {
 	return &Database{DB: db}, nil
 }
 
-// runMigrations runs database migrations
+// runMigrations runs database migrations using gormigrate
 func runMigrations(db *gorm.DB) error {
-	migrator := migrations.NewMigrator(db)
-	return migrator.Migrate()
+	migrationManager := migrations.NewMigrationManager(db)
+	return migrationManager.Migrate()
 }
 
 // GetDB returns the database instance
@@ -99,18 +99,30 @@ func (d *Database) GetDB() *gorm.DB {
 
 // RunMigrations runs migrations manually (for CLI commands)
 func (d *Database) RunMigrations() error {
-	migrator := migrations.NewMigrator(d.DB)
-	return migrator.Migrate()
+	migrationManager := migrations.NewMigrationManager(d.DB)
+	return migrationManager.Migrate()
 }
 
 // RollbackMigration rolls back the last migration
 func (d *Database) RollbackMigration() error {
-	migrator := migrations.NewMigrator(d.DB)
-	return migrator.Rollback()
+	migrationManager := migrations.NewMigrationManager(d.DB)
+	return migrationManager.Rollback()
+}
+
+// RollbackToMigration rolls back to a specific migration
+func (d *Database) RollbackToMigration(migrationID string) error {
+	migrationManager := migrations.NewMigrationManager(d.DB)
+	return migrationManager.RollbackTo(migrationID)
 }
 
 // MigrationStatus shows migration status
 func (d *Database) MigrationStatus() error {
-	migrator := migrations.NewMigrator(d.DB)
-	return migrator.Status()
+	migrationManager := migrations.NewMigrationManager(d.DB)
+	return migrationManager.Status()
+}
+
+// GetAppliedMigrations returns all applied migrations
+func (d *Database) GetAppliedMigrations() ([]string, error) {
+	migrationManager := migrations.NewMigrationManager(d.DB)
+	return migrationManager.GetAppliedMigrations()
 }
