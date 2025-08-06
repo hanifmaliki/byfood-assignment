@@ -58,11 +58,11 @@ byfood-assignment/
 - Node.js (v18 or higher)
 - Go (v1.21 or higher)
 - Git
-- PostgreSQL (recommended) or SQLite
+- PostgreSQL
 
 ## Database Setup
 
-### Option 1: PostgreSQL (Recommended)
+### PostgreSQL Setup
 
 1. **Install PostgreSQL:**
    ```bash
@@ -88,16 +88,6 @@ byfood-assignment/
    ```bash
    cp env.example .env
    # Edit .env with your PostgreSQL credentials
-   ```
-
-### Option 2: SQLite (Development Only)
-
-1. **Configure environment variables:**
-   ```bash
-   cp env.example .env
-   # Edit .env to use SQLite
-   DB_TYPE=sqlite
-   DB_PATH=library.db
    ```
 
 ## Environment Variables
@@ -129,7 +119,6 @@ byfood-assignment/
 #### PostgreSQL Configuration (.env)
 ```bash
 # Database Configuration
-DB_TYPE=postgres
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
@@ -140,23 +129,6 @@ DB_SSL_MODE=disable
 # Server Configuration
 BACKEND_PORT=8080
 BACKEND_HOST=localhost
-
-# Security Configuration
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-
-# CORS Configuration
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
-```
-
-#### SQLite Configuration (.env)
-```bash
-# Database Configuration
-DB_TYPE=sqlite
-DB_PATH=library.db
-
-# Server Configuration
-BACKEND_PORT=8080
-HOST=localhost
 
 # Security Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -192,14 +164,8 @@ cp env.example .env
 
 ### 3. Set up database
 
-#### For PostgreSQL:
 ```bash
 ./setup-postgres.sh
-```
-
-#### For SQLite:
-```bash
-# No additional setup needed - SQLite file will be created automatically
 ```
 
 ### 4. Backend Setup
@@ -332,12 +298,12 @@ Once the backend is running, you can access the Swagger documentation at:
 ### Development
 - Set `NODE_ENV=development`
 - Enable debug mode: `NEXT_PUBLIC_DEBUG=true`
-- Use local database: `DB_PATH=library.db` (SQLite) or configure PostgreSQL
+- Use local PostgreSQL database
 
 ### Production
 - Set `NODE_ENV=production`
 - Disable debug mode: `NEXT_PUBLIC_DEBUG=false`
-- Use production database (PostgreSQL recommended)
+- Use production PostgreSQL database
 - Set proper CORS origins
 - Configure rate limiting
 - Enable SSL for PostgreSQL: `DB_SSL_MODE=require`
@@ -351,10 +317,6 @@ Once the backend is running, you can access the Swagger documentation at:
 - **Use SSL connections** for PostgreSQL in production
 
 ## Database Migration
-
-The application uses GORM's auto-migration feature. Tables will be created automatically when the application starts.
-
-### Migration System
 
 The application uses **gormigrate** with **timestamp-based migration naming** for better collaboration and chronological ordering.
 
@@ -457,21 +419,6 @@ psql -h localhost -U postgres -d library_db
 
 # View table structure
 \d books
-
-# View migration history
-SELECT * FROM schema_migrations ORDER BY id;
-```
-
-#### SQLite
-```bash
-# Connect to database
-sqlite3 library.db
-
-# View tables
-.tables
-
-# View table structure
-.schema books
 
 # View migration history
 SELECT * FROM schema_migrations ORDER BY id;

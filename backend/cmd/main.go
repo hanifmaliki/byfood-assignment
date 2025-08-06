@@ -52,8 +52,8 @@ func NewApplication(cfg *config.Config) *Application {
 
 	// Log configuration
 	log.Printf("Loading configuration for environment: %s", cfg.Server.Environment)
-	log.Printf("Database type: %s", cfg.Database.Type)
-	log.Printf("Database path: %s", cfg.Database.Path)
+	log.Printf("Database host: %s:%s", cfg.Database.Host, cfg.Database.Port)
+	log.Printf("Database name: %s", cfg.Database.Name)
 	log.Printf("API Prefix: %s", cfg.API.Prefix)
 	log.Printf("Swagger enabled: %t", cfg.Swagger.Enabled)
 

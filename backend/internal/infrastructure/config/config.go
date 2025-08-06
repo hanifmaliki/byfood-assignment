@@ -26,14 +26,12 @@ type ServerConfig struct {
 
 // DatabaseConfig holds database configuration
 type DatabaseConfig struct {
-	Type     string
-	Path     string // For SQLite
-	Host     string // For PostgreSQL
-	Port     string // For PostgreSQL
-	User     string // For PostgreSQL
-	Password string // For PostgreSQL
-	Name     string // For PostgreSQL
-	SSLMode  string // For PostgreSQL
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Name     string
+	SSLMode  string
 }
 
 // APIConfig holds API configuration
@@ -80,8 +78,6 @@ func Load() *Config {
 			Environment: getEnv("BACKEND_ENVIRONMENT", "development"),
 		},
 		Database: DatabaseConfig{
-			Type:     getEnv("DB_TYPE", "postgres"),
-			Path:     getEnv("DB_PATH", "library.db"),
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "5432"),
 			User:     getEnv("DB_USER", "postgres"),
