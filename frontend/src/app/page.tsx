@@ -14,6 +14,11 @@ export default function Home() {
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
+  // Get app configuration from environment variables
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Library Management System';
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
+  const isDebug = process.env.NEXT_PUBLIC_DEBUG === 'true';
+
   const handleAddBook = () => {
     setSelectedBook(undefined);
     setFormMode('create');
@@ -63,8 +68,13 @@ export default function Home() {
             <div className="flex items-center space-x-3">
               <BookOpen className="h-8 w-8 text-blue-600" />
               <h1 className="text-2xl font-bold text-gray-900">
-                Library Management System
+                {appName}
               </h1>
+              {isDebug && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  v{appVersion}
+                </span>
+              )}
             </div>
             <button
               onClick={handleAddBook}
@@ -143,6 +153,21 @@ export default function Home() {
               </div>
             )}
           </>
+        )}
+
+        {/* Debug Information */}
+        {isDebug && (
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Debug Information</h3>
+            <div className="text-xs text-gray-600 space-y-1">
+              <p>App Name: {appName}</p>
+              <p>Version: {appVersion}</p>
+              <p>API URL: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}</p>
+              <p>Books Count: {state.books.length}</p>
+              <p>Loading: {state.loading ? 'Yes' : 'No'}</p>
+              <p>Error: {state.error || 'None'}</p>
+            </div>
+          </div>
         )}
       </main>
 

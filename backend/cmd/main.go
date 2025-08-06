@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"library-management-system/internal/delivery/http/handlers"
+	"library-management-system/internal/infrastructure/config"
 	"library-management-system/internal/infrastructure/database"
 	"library-management-system/internal/repository"
 	"library-management-system/internal/usecase"
@@ -22,6 +25,38 @@ import (
 // @host localhost:8080
 // @BasePath /api
 func main() {
+	// Load configuration
+	cfg := config.Load()
+
+	// Initialize application with configuration
+	app := NewApplication(cfg)
+
+	// Start the server
+	if err := app.Start(); err != nil {
+		log.Fatal("Failed to start application:", err)
+	}
+}
+
+// Application represents the main application
+type Application struct {
+	config *config.Config
+	router *gin.Engine
+}
+
+// NewApplication creates a new application instance
+func NewApplication(cfg *config.Config) *Application {
+	// Set Gin mode based on environment
+	if cfg.Server.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// Log configuration
+	log.Printf("Loading configuration for environment: %s", cfg.Server.Environment)
+	log.Printf("Database type: %s", cfg.Database.Type)
+	log.Printf("Database path: %s", cfg.Database.Path)
+	log.Printf("API Prefix: %s", cfg.API.Prefix)
+	log.Printf("Swagger enabled: %t", cfg.Swagger.Enabled)
+
 	// Initialize database
 	db, err := database.NewDatabase()
 	if err != nil {
@@ -40,14 +75,40 @@ func main() {
 	bookHandler := handlers.NewBookHandler(bookUseCase)
 	urlHandler := handlers.NewURLHandler(urlUseCase)
 
-	// Initialize Gin router
-	r := gin.Default()
+	// Initialize router
+	router := gin.Default()
 
 	// Add CORS middleware
-	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+	router.Use(corsMiddleware(cfg.CORS))
+
+	// Setup routes
+	setupRoutes(router, cfg, bookHandler, urlHandler)
+
+	return &Application{
+		config: cfg,
+		router: router,
+	}
+}
+
+// Start starts the application server
+func (app *Application) Start() error {
+	serverAddr := fmt.Sprintf("%s:%s", app.config.Server.Host, app.config.Server.Port)
+	log.Printf("Server starting on %s", serverAddr)
+	return app.router.Run(serverAddr)
+}
+
+// corsMiddleware creates CORS middleware
+func corsMiddleware(cors config.CORSConfig) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+		if origin != "" && contains(cors.AllowedOrigins, origin) {
+			c.Header("Access-Control-Allow-Origin", origin)
+		} else {
+			c.Header("Access-Control-Allow-Origin", strings.Join(cors.AllowedOrigins, ","))
+		}
+
+		c.Header("Access-Control-Allow-Methods", strings.Join(cors.AllowedMethods, ","))
+		c.Header("Access-Control-Allow-Headers", strings.Join(cors.AllowedHeaders, ","))
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusOK)
@@ -55,10 +116,13 @@ func main() {
 		}
 
 		c.Next()
-	})
+	}
+}
 
+// setupRoutes sets up all application routes
+func setupRoutes(router *gin.Engine, cfg *config.Config, bookHandler *handlers.BookHandler, urlHandler *handlers.URLHandler) {
 	// API routes
-	api := r.Group("/api")
+	api := router.Group(cfg.API.Prefix)
 	{
 		// Book management routes
 		books := api.Group("/books")
@@ -78,15 +142,27 @@ func main() {
 	}
 
 	// Swagger documentation
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if cfg.Swagger.Enabled {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	// Health check
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	healthEndpoint := "/health"
+	router.GET(healthEndpoint, func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ok",
+			"service": cfg.Swagger.Title,
+			"version": cfg.Swagger.Version,
+		})
 	})
+}
 
-	log.Println("Server starting on :8080")
-	if err := r.Run(":8080"); err != nil {
-		log.Fatal("Failed to start server:", err)
+// contains checks if a slice contains a string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
 	}
+	return false
 }

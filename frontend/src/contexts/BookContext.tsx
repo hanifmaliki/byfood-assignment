@@ -75,15 +75,32 @@ interface BookProviderProps {
 
 export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(bookReducer, initialState);
+  
+  // Get debug configuration from environment
+  const isDebug = process.env.NEXT_PUBLIC_DEBUG === 'true';
 
   const fetchBooks = async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
+      
+      if (isDebug) {
+        console.log('Fetching books from API...');
+      }
+      
       const books = await bookApi.getAll();
       dispatch({ type: 'SET_BOOKS', payload: books });
+      
+      if (isDebug) {
+        console.log(`Fetched ${books.length} books`);
+      }
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to fetch books' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch books';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      
+      if (isDebug) {
+        console.error('Error fetching books:', error);
+      }
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -92,10 +109,24 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
   const createBook = async (book: CreateBookRequest) => {
     try {
       dispatch({ type: 'SET_ERROR', payload: null });
+      
+      if (isDebug) {
+        console.log('Creating book:', book);
+      }
+      
       const newBook = await bookApi.create(book);
       dispatch({ type: 'ADD_BOOK', payload: newBook });
+      
+      if (isDebug) {
+        console.log('Book created successfully:', newBook);
+      }
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to create book' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create book';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      
+      if (isDebug) {
+        console.error('Error creating book:', error);
+      }
       throw error;
     }
   };
@@ -103,10 +134,24 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
   const updateBook = async (id: string, book: UpdateBookRequest) => {
     try {
       dispatch({ type: 'SET_ERROR', payload: null });
+      
+      if (isDebug) {
+        console.log('Updating book:', { id, book });
+      }
+      
       const updatedBook = await bookApi.update(id, book);
       dispatch({ type: 'UPDATE_BOOK', payload: updatedBook });
+      
+      if (isDebug) {
+        console.log('Book updated successfully:', updatedBook);
+      }
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to update book' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update book';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      
+      if (isDebug) {
+        console.error('Error updating book:', error);
+      }
       throw error;
     }
   };
@@ -114,10 +159,24 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
   const deleteBook = async (id: string) => {
     try {
       dispatch({ type: 'SET_ERROR', payload: null });
+      
+      if (isDebug) {
+        console.log('Deleting book:', id);
+      }
+      
       await bookApi.delete(id);
       dispatch({ type: 'DELETE_BOOK', payload: id });
+      
+      if (isDebug) {
+        console.log('Book deleted successfully:', id);
+      }
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete book' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete book';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      
+      if (isDebug) {
+        console.error('Error deleting book:', error);
+      }
       throw error;
     }
   };

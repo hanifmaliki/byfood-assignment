@@ -4,12 +4,18 @@ const nextConfig = {
     appDir: true,
   },
   async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const apiPrefix = process.env.NEXT_PUBLIC_API_PREFIX || '/api';
+    
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:8080/api/:path*',
+        source: `${apiPrefix}/:path*`,
+        destination: `${apiUrl}${apiPrefix}/:path*`,
       },
     ]
+  },
+  env: {
+    CUSTOM_KEY: process.env.NEXT_PUBLIC_CUSTOM_KEY,
   },
 }
 

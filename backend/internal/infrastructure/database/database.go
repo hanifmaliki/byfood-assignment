@@ -1,9 +1,11 @@
 package database
 
 import (
+	"fmt"
 	"log"
 
 	"library-management-system/internal/domain/entities"
+	"library-management-system/internal/infrastructure/config"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -17,16 +19,42 @@ type Database struct {
 
 // NewDatabase creates a new database connection
 func NewDatabase() (*Database, error) {
-	// Configure GORM logger
-	config := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+	// Load configuration
+	cfg := config.Load()
+
+	// Configure GORM logger based on log level
+	var gormLogLevel logger.LogLevel
+	switch cfg.Logging.Level {
+	case "debug":
+		gormLogLevel = logger.Info
+	case "info":
+		gormLogLevel = logger.Info
+	case "warn":
+		gormLogLevel = logger.Warn
+	case "error":
+		gormLogLevel = logger.Error
+	default:
+		gormLogLevel = logger.Info
 	}
 
-	// Connect to SQLite database
-	db, err := gorm.Open(sqlite.Open("library.db"), config)
-	if err != nil {
-		log.Printf("Failed to connect to database: %v", err)
-		return nil, err
+	gormConfig := &gorm.Config{
+		Logger: logger.Default.LogMode(gormLogLevel),
+	}
+
+	var db *gorm.DB
+	var err error
+
+	// Connect to database based on type
+	switch cfg.Database.Type {
+	case "sqlite":
+		db, err = gorm.Open(sqlite.Open(cfg.Database.Path), gormConfig)
+		if err != nil {
+			log.Printf("Failed to connect to SQLite database: %v", err)
+			return nil, err
+		}
+		log.Printf("Connected to SQLite database: %s", cfg.Database.Path)
+	default:
+		return nil, fmt.Errorf("unsupported database type: %s", cfg.Database.Type)
 	}
 
 	// Auto migrate the database
