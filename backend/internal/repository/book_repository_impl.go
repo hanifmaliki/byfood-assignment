@@ -16,12 +16,10 @@ type BookRepositoryImpl struct {
 
 // NewBookRepository creates a new book repository
 func NewBookRepository(db *gorm.DB) repositories.BookRepository {
-	return &BookRepositoryImpl{
-		db: db,
-	}
+	return &BookRepositoryImpl{db: db}
 }
 
-// Create saves a new book to the database
+// Create creates a new book
 func (r *BookRepositoryImpl) Create(book *entities.Book) error {
 	return r.db.Create(book).Error
 }
@@ -32,7 +30,7 @@ func (r *BookRepositoryImpl) GetByID(id string) (*entities.Book, error) {
 	err := r.db.Where("id = ?", id).First(&book).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("book not found")
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -40,25 +38,69 @@ func (r *BookRepositoryImpl) GetByID(id string) (*entities.Book, error) {
 }
 
 // GetAll retrieves all books
-func (r *BookRepositoryImpl) GetAll() ([]*entities.Book, error) {
-	var books []*entities.Book
-	err := r.db.Order("created_at desc").Find(&books).Error
+func (r *BookRepositoryImpl) GetAll() ([]entities.Book, error) {
+	var books []entities.Book
+	err := r.db.Find(&books).Error
 	return books, err
 }
 
-// Update updates an existing book
+// Update updates a book
 func (r *BookRepositoryImpl) Update(book *entities.Book) error {
 	return r.db.Save(book).Error
 }
 
-// Delete removes a book by ID
+// Delete deletes a book (soft delete)
 func (r *BookRepositoryImpl) Delete(id string) error {
-	result := r.db.Where("id = ?", id).Delete(&entities.Book{})
-	if result.Error != nil {
-		return result.Error
+	return r.db.Delete(&entities.Book{}, "id = ?", id).Error
+}
+
+// HardDelete permanently deletes a book
+func (r *BookRepositoryImpl) HardDelete(id string) error {
+	return r.db.Unscoped().Delete(&entities.Book{}, "id = ?", id).Error
+}
+
+// FindByTitle finds books by title (case-insensitive)
+func (r *BookRepositoryImpl) FindByTitle(title string) ([]entities.Book, error) {
+	var books []entities.Book
+	err := r.db.Where("LOWER(title) LIKE LOWER(?)", "%"+title+"%").Find(&books).Error
+	return books, err
+}
+
+// FindByAuthor finds books by author (case-insensitive)
+func (r *BookRepositoryImpl) FindByAuthor(author string) ([]entities.Book, error) {
+	var books []entities.Book
+	err := r.db.Where("LOWER(author) LIKE LOWER(?)", "%"+author+"%").Find(&books).Error
+	return books, err
+}
+
+// FindByYear finds books by year
+func (r *BookRepositoryImpl) FindByYear(year int) ([]entities.Book, error) {
+	var books []entities.Book
+	err := r.db.Where("year = ?", year).Find(&books).Error
+	return books, err
+}
+
+// FindByISBN finds a book by ISBN
+func (r *BookRepositoryImpl) FindByISBN(isbn string) (*entities.Book, error) {
+	var book entities.Book
+	err := r.db.Where("isbn = ?", isbn).First(&book).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
 	}
-	if result.RowsAffected == 0 {
-		return errors.New("book not found")
-	}
-	return nil
+	return &book, nil
+}
+
+// GetDeletedBooks retrieves all soft-deleted books
+func (r *BookRepositoryImpl) GetDeletedBooks() ([]entities.Book, error) {
+	var books []entities.Book
+	err := r.db.Unscoped().Where("deleted_at IS NOT NULL").Find(&books).Error
+	return books, err
+}
+
+// Restore restores a soft-deleted book
+func (r *BookRepositoryImpl) Restore(id string) error {
+	return r.db.Unscoped().Model(&entities.Book{}).Where("id = ?", id).Update("deleted_at", nil).Error
 }

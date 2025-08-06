@@ -6,3 +6,7 @@
 .env.development
 .env.test
 .env.production
+
+# Executables
+main
+migrate

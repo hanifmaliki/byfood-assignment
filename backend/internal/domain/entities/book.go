@@ -4,26 +4,30 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-// Book represents a book in the library domain
+// Book represents a book entity
 type Book struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	Author    string    `json:"author"`
-	Year      int       `json:"year"`
-	ISBN      string    `json:"isbn"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        string     `json:"id" gorm:"primaryKey;type:uuid"`
+	Title     string     `json:"title" gorm:"not null;index"`
+	Author    string     `json:"author" gorm:"not null;index"`
+	Year      int        `json:"year" gorm:"not null;index"`
+	ISBN      string     `json:"isbn" gorm:"uniqueIndex;not null"`
+	CreatedAt time.Time  `json:"created_at" gorm:"autoCreateTime;index"`
+	UpdatedAt time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" gorm:"index"`
 }
 
-// NewBook creates a new book with a generated ID
-func NewBook(title, author, isbn string, year int) *Book {
-	return &Book{
-		ID:     uuid.New().String(),
-		Title:  title,
-		Author: author,
-		Year:   year,
-		ISBN:   isbn,
+// BeforeCreate is called before creating a new book
+func (b *Book) BeforeCreate(tx *gorm.DB) error {
+	if b.ID == "" {
+		b.ID = uuid.New().String()
 	}
+	return nil
+}
+
+// TableName returns the table name for the Book entity
+func (Book) TableName() string {
+	return "books"
 }

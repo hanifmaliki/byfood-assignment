@@ -129,9 +129,13 @@ func setupRoutes(router *gin.Engine, cfg *config.Config, bookHandler *handlers.B
 		{
 			books.GET("", bookHandler.GetBooks)
 			books.POST("", bookHandler.CreateBook)
+			books.GET("/search", bookHandler.SearchBooks)
+			books.GET("/deleted", bookHandler.GetDeletedBooks)
 			books.GET("/:id", bookHandler.GetBook)
 			books.PUT("/:id", bookHandler.UpdateBook)
 			books.DELETE("/:id", bookHandler.DeleteBook)
+			books.POST("/:id/restore", bookHandler.RestoreBook)
+			books.DELETE("/:id/permanent", bookHandler.HardDeleteBook)
 		}
 
 		// URL processing routes

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"library-management-system/internal/domain/entities"
 	"library-management-system/internal/infrastructure/config"
+	"library-management-system/internal/infrastructure/database/migrations"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -76,10 +76,9 @@ func NewDatabase() (*Database, error) {
 		return nil, fmt.Errorf("unsupported database type: %s", cfg.Database.Type)
 	}
 
-	// Auto migrate the database
-	err = db.AutoMigrate(&entities.Book{})
-	if err != nil {
-		log.Printf("Failed to migrate database: %v", err)
+	// Run migrations
+	if err := runMigrations(db); err != nil {
+		log.Printf("Failed to run migrations: %v", err)
 		return nil, err
 	}
 
@@ -87,7 +86,31 @@ func NewDatabase() (*Database, error) {
 	return &Database{DB: db}, nil
 }
 
+// runMigrations runs database migrations
+func runMigrations(db *gorm.DB) error {
+	migrator := migrations.NewMigrator(db)
+	return migrator.Migrate()
+}
+
 // GetDB returns the database instance
 func (d *Database) GetDB() *gorm.DB {
 	return d.DB
+}
+
+// RunMigrations runs migrations manually (for CLI commands)
+func (d *Database) RunMigrations() error {
+	migrator := migrations.NewMigrator(d.DB)
+	return migrator.Migrate()
+}
+
+// RollbackMigration rolls back the last migration
+func (d *Database) RollbackMigration() error {
+	migrator := migrations.NewMigrator(d.DB)
+	return migrator.Rollback()
+}
+
+// MigrationStatus shows migration status
+func (d *Database) MigrationStatus() error {
+	migrator := migrations.NewMigrator(d.DB)
+	return migrator.Status()
 }
