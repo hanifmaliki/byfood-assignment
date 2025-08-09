@@ -1,5 +1,7 @@
 FROM golang:1.23-alpine AS builder
 
+RUN apk add --no-cache build-base
+
 WORKDIR /app
 
 # Copy go mod and sum files
