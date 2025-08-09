@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Plus, BookOpen, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 import { BookCard } from '@/components/BookCard';
 import { BookForm } from '@/components/BookForm';
 import { useBookContext } from '@/contexts/BookContext';
@@ -32,8 +33,8 @@ export default function Home() {
   };
 
   const handleViewBook = (book: Book) => {
-    // For now, just show an alert with book details
-    alert(`Book Details:\nTitle: ${book.title}\nAuthor: ${book.author}\nYear: ${book.year}\nISBN: ${book.isbn}`);
+    // Navigate to dynamic route for viewing details
+    window.location.href = `/books/${book.id}`;
   };
 
   const handleDeleteBook = async (id: string) => {
