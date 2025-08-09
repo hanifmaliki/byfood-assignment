@@ -27,6 +27,7 @@ export const BookForm: React.FC<BookFormProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     if (book && mode === 'edit') {
@@ -58,12 +59,15 @@ export const BookForm: React.FC<BookFormProps> = ({
       newErrors.author = 'Author is required';
     }
 
-    if (!formData.isbn.trim()) {
+    const isbnTrimmed = formData.isbn.trim();
+    if (!isbnTrimmed) {
       newErrors.isbn = 'ISBN is required';
+    } else if (isbnTrimmed.length < 10 || isbnTrimmed.length > 13) {
+      newErrors.isbn = 'ISBN must be between 10 and 13 characters';
     }
 
-    if (formData.year < 1800 || formData.year > 2024) {
-      newErrors.year = 'Year must be between 1800 and 2024';
+    if (formData.year < 1800 || formData.year > currentYear) {
+      newErrors.year = `Year must be between 1800 and ${currentYear}`;
     }
 
     setErrors(newErrors);
@@ -170,7 +174,7 @@ export const BookForm: React.FC<BookFormProps> = ({
               value={formData.year}
               onChange={handleInputChange}
               min="1800"
-              max="2024"
+              max={currentYear}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.year ? 'border-red-500' : 'border-gray-300'
               }`}
