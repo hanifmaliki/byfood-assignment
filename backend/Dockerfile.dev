@@ -1,0 +1,13 @@
+FROM golang:1.23-alpine
+
+# Install build tools for CGO
+RUN apk add --no-cache build-base git
+
+# Set working directory
+WORKDIR /app
+
+# Expose port
+EXPOSE 8080
+
+# Command to run in development mode
+CMD ["go", "run", "cmd/main.go"] 
