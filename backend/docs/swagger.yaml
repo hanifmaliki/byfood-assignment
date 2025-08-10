@@ -1,0 +1,386 @@
+basePath: /api
+definitions:
+  entities.Book:
+    properties:
+      author:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      isbn:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      year:
+        type: integer
+    type: object
+  entities.URLRequest:
+    properties:
+      operation:
+        type: string
+      url:
+        type: string
+    type: object
+  entities.URLResponse:
+    properties:
+      processed_url:
+        type: string
+    type: object
+  handlers.CreateBookRequest:
+    properties:
+      author:
+        type: string
+      isbn:
+        type: string
+      title:
+        type: string
+      year:
+        type: integer
+    required:
+    - author
+    - isbn
+    - title
+    - year
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        description: |-
+          Error message
+          example: invalid request payload
+        type: string
+    type: object
+  handlers.MessageResponse:
+    properties:
+      message:
+        description: |-
+          Informational message
+          example: operation completed successfully
+        type: string
+    type: object
+  handlers.UpdateBookRequest:
+    properties:
+      author:
+        type: string
+      isbn:
+        type: string
+      title:
+        type: string
+      year:
+        type: integer
+    required:
+    - author
+    - isbn
+    - title
+    - year
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A RESTful API for managing books and URL processing with clean architecture
+  title: Library Management System API
+  version: "1.0"
+paths:
+  /books:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all books from the library
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Book'
+            type: array
+      summary: Get all books
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      description: Create a new book in the library
+      parameters:
+      - description: Book information
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateBookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new book
+      tags:
+      - books
+  /books/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a book from the library
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a book
+      tags:
+      - books
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific book by its ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Book'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a book by ID
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      description: Update an existing book in the library
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated book information
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateBookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a book
+      tags:
+      - books
+  /books/{id}/permanent:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a book from the library
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Permanently delete a book
+      tags:
+      - books
+  /books/{id}/restore:
+    post:
+      consumes:
+      - application/json
+      description: Restore a soft-deleted book
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Restore a deleted book
+      tags:
+      - books
+  /books/deleted:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all soft-deleted books
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Book'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get deleted books
+      tags:
+      - books
+  /books/search:
+    get:
+      consumes:
+      - application/json
+      description: Search books by title, author, or year
+      parameters:
+      - description: Search by title
+        in: query
+        name: title
+        type: string
+      - description: Search by author
+        in: query
+        name: author
+        type: string
+      - description: Search by year
+        in: query
+        name: year
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Book'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Search books
+      tags:
+      - books
+  /url/process:
+    post:
+      consumes:
+      - application/json
+      description: Process a URL according to the specified operation (canonical,
+        redirection, or all)
+      parameters:
+      - description: URL processing request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.URLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.URLResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Process URL
+      tags:
+      - url
+swagger: "2.0"

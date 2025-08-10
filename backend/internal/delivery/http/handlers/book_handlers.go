@@ -63,8 +63,8 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 // @Produce json
 // @Param book body CreateBookRequest true "Book information"
 // @Success 201 {object} entities.Book
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books [post]
 func (h *BookHandler) CreateBook(c *gin.Context) {
 	var req CreateBookRequest
@@ -96,8 +96,8 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Book ID"
 // @Success 200 {object} entities.Book
-// @Failure 404 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books/{id} [get]
 func (h *BookHandler) GetBook(c *gin.Context) {
 	id := c.Param("id")
@@ -129,9 +129,9 @@ func (h *BookHandler) GetBook(c *gin.Context) {
 // @Param id path string true "Book ID"
 // @Param book body UpdateBookRequest true "Updated book information"
 // @Success 200 {object} entities.Book
-// @Failure 400 {object} gin.H
-// @Failure 404 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books/{id} [put]
 func (h *BookHandler) UpdateBook(c *gin.Context) {
 	id := c.Param("id")
@@ -168,10 +168,10 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Book ID"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 404 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Success 200 {object} handlers.MessageResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books/{id} [delete]
 func (h *BookHandler) DeleteBook(c *gin.Context) {
 	id := c.Param("id")
@@ -198,8 +198,8 @@ func (h *BookHandler) DeleteBook(c *gin.Context) {
 // @Param author query string false "Search by author"
 // @Param year query int false "Search by year"
 // @Success 200 {array} entities.Book
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books/search [get]
 func (h *BookHandler) SearchBooks(c *gin.Context) {
 	title := c.Query("title")
@@ -236,7 +236,7 @@ func (h *BookHandler) SearchBooks(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {array} entities.Book
-// @Failure 500 {object} gin.H
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books/deleted [get]
 func (h *BookHandler) GetDeletedBooks(c *gin.Context) {
 	books, err := h.bookUseCase.GetDeletedBooks()
@@ -255,9 +255,9 @@ func (h *BookHandler) GetDeletedBooks(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Book ID"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Success 200 {object} handlers.MessageResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books/{id}/restore [post]
 func (h *BookHandler) RestoreBook(c *gin.Context) {
 	id := c.Param("id")
@@ -281,10 +281,10 @@ func (h *BookHandler) RestoreBook(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Book ID"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 404 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Success 200 {object} handlers.MessageResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
 // @Router /books/{id}/permanent [delete]
 func (h *BookHandler) HardDeleteBook(c *gin.Context) {
 	id := c.Param("id")

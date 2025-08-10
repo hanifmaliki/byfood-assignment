@@ -29,9 +29,9 @@ func NewURLHandler(urlUseCase *usecase.URLUseCase) *URLHandler {
 // @Produce json
 // @Param request body entities.URLRequest true "URL processing request"
 // @Success 200 {object} entities.URLResponse
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
-// @Router /api/url/process [post]
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /url/process [post]
 func (h *URLHandler) ProcessURL(c *gin.Context) {
 	var req entities.URLRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

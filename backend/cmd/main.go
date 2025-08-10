@@ -12,7 +12,7 @@ import (
 	"library-management-system/internal/repository"
 	"library-management-system/internal/usecase"
 
-	_ "library-management-system/docs"
+	docs "library-management-system/docs"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -27,6 +27,13 @@ import (
 func main() {
 	// Load configuration
 	cfg := config.Load()
+
+	// Configure Swagger metadata at runtime from config
+	docs.SwaggerInfo.Title = cfg.Swagger.Title
+	docs.SwaggerInfo.Description = cfg.Swagger.Description
+	docs.SwaggerInfo.Version = cfg.Swagger.Version
+	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
+	docs.SwaggerInfo.BasePath = cfg.API.Prefix
 
 	// Initialize application with configuration
 	app := NewApplication(cfg)
