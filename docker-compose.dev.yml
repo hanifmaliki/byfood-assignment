@@ -73,7 +73,7 @@ services:
       # Node modules cache
       - node_modules_dev:/app/node_modules
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
       - NODE_ENV=development
     depends_on:
       - backend
