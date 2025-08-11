@@ -1,8 +1,5 @@
 FROM golang:1.23-alpine AS builder
 
-# Optional: pass a changing value to force rebuilds when desired
-ARG REBUILD=""
-
 # Tooling for CGO builds
 RUN apk add --no-cache build-base git
 
@@ -18,9 +15,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Copy the rest of the source
 COPY . .
 
-# Echo the arg to break cache when REBUILD changes
-RUN echo "Rebuild token: ${REBUILD}"
-
 # Build the application with build cache (requires BuildKit)
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main cmd/main.go
@@ -30,7 +24,7 @@ FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
+WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .

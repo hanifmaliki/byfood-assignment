@@ -15,6 +15,7 @@ services:
       - postgres_data_dev:/var/lib/postgresql/data
     networks:
       - lms_dev_network
+    restart: unless-stopped
 
   # Backend Service (Development)
   backend:
