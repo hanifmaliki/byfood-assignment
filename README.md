@@ -59,36 +59,269 @@ byfood-assignment/
 - Go (v1.21 or higher)
 - Git
 - PostgreSQL
+- Docker and Docker Compose (for containerized setup)
+
+## Quick Start
+
+### Option 1: Docker Compose (Recommended)
+
+The fastest way to get started:
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd byfood-assignment
+
+# 2. Start all services
+docker-compose -f docker-compose.dev.yml up -d
+
+# 3. Access the application
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8080
+# Swagger: http://localhost:8080/swagger/index.html
+```
+
+### Option 2: Manual Setup
+
+If you prefer to run services locally:
+
+#### 1. Clone the repository
+```bash
+git clone <repository-url>
+cd byfood-assignment
+```
+
+#### 2. Set up environment variables
+```bash
+cp env.example .env
+# Edit .env with your configuration
+```
+
+#### 3. Set up database
+```bash
+./setup-postgres.sh
+```
+
+#### 4. Backend Setup
+```bash
+cd backend
+cp env.example .env
+go mod tidy
+go run cmd/main.go
+```
+
+The backend will start on `http://localhost:8080`
+
+#### 5. Frontend Setup
+```bash
+cd frontend
+cp env.example .env.local
+npm install
+npm run dev
+```
+
+The frontend will start on `http://localhost:3000`
+
+## Docker Configuration
+
+### Docker Compose Files
+
+The project includes two Docker Compose configurations:
+
+#### Development Environment (`docker-compose.dev.yml`)
+- **Hot Reload**: Source code is mounted for live development
+- **Development Ports**: 
+  - Frontend: 3000
+  - Backend: 8080
+  - PostgreSQL: 5432
+- **Volume Mounts**: Source code, Go modules, Node modules
+- **Environment**: Development settings with debug enabled
+
+#### Production Environment (`docker-compose.yml`)
+- **Optimized Builds**: Multi-stage builds for smaller images
+- **Production Ports**: Same as development
+- **No Volume Mounts**: Uses built binaries
+- **Environment**: Production settings with security optimizations
+
+### Docker Images
+
+#### Backend Images
+- **Development**: `Dockerfile.dev` - Includes build tools for live development
+- **Production**: `Dockerfile` - Multi-stage build with minimal runtime image
+
+#### Frontend Images
+- **Development**: `Dockerfile.dev` - Includes development dependencies
+- **Production**: `Dockerfile` - Multi-stage build with optimized Next.js output
+
+### Environment Variables for Docker
+
+The Docker Compose files use the following environment structure:
+
+```bash
+# Backend (.env.example)
+DB_HOST=postgres          # Docker service name
+DB_PORT=5432
+DB_NAME=library_management
+DB_USER=postgres
+DB_PASSWORD=postgres
+BACKEND_HOST=0.0.0.0      # Required for Docker networking
+BACKEND_PORT=8080
+
+# Frontend (.env.example)
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NODE_ENV=development
+```
+
+### Docker Commands Reference
+
+```bash
+# Development
+docker-compose -f docker-compose.dev.yml up -d          # Start services
+docker-compose -f docker-compose.dev.yml down           # Stop services
+docker-compose -f docker-compose.dev.yml logs -f        # Follow logs
+docker-compose -f docker-compose.dev.yml restart backend # Restart service
+
+# Production
+docker-compose -f docker-compose.yml up -d              # Start services
+docker-compose -f docker-compose.yml down               # Stop services
+docker-compose -f docker-compose.yml logs -f            # Follow logs
+
+# Build images
+docker-compose -f docker-compose.dev.yml build          # Build dev images
+docker-compose -f docker-compose.yml build              # Build prod images
+
+# Clean up
+docker-compose -f docker-compose.dev.yml down -v        # Remove volumes
+docker system prune -a                                  # Clean unused images
+```
+
+### Development Workflow with Docker
+
+```bash
+# Start services in background
+docker-compose -f docker-compose.dev.yml up -d
+
+# Make code changes (they auto-reload)
+# Backend: Edit files in ./backend/
+# Frontend: Edit files in ./frontend/
+
+# View logs for live debugging
+docker-compose -f docker-compose.dev.yml logs -f backend
+
+# Restart a specific service
+docker-compose -f docker-compose.dev.yml restart backend
+
+# Stop all services
+docker-compose -f docker-compose.dev.yml down
+```
 
 ## Database Setup
 
-### PostgreSQL Setup
+The application uses **gormigrate** with **timestamp-based migration naming** for better collaboration and chronological ordering.
 
-1. **Install PostgreSQL:**
-   ```bash
-   # macOS
-   brew install postgresql
-   brew services start postgresql
-   
-   # Ubuntu
-   sudo apt-get install postgresql postgresql-contrib
-   sudo systemctl start postgresql
-   
-   # CentOS
-   sudo yum install postgresql postgresql-server
-   sudo systemctl start postgresql
-   ```
+#### Migration Naming Convention
 
-2. **Run the PostgreSQL setup script:**
-   ```bash
-   ./setup-postgres.sh
-   ```
+```
+Format: YYYYMMDDHHMMSS_descriptive_name
+Example: 20241201000000_create_books_table
+```
 
-3. **Configure environment variables:**
-   ```bash
-   cp env.example .env
-   # Edit .env with your PostgreSQL credentials
-   ```
+**Benefits:**
+- ✅ Prevents conflicts when multiple developers create migrations
+- ✅ Ensures chronological order
+- ✅ Clear timestamp for when migration was created
+- ✅ Descriptive names for easy identification
+
+#### Available Migrations
+
+| Timestamp | Name | Description |
+|-----------|------|-------------|
+| `20241201000000` | `create_books_table` | Creates the books table with basic structure |
+| `20241201000001` | `add_indexes_to_books` | Adds performance indexes for title, author, year, ISBN, created_at |
+| `20241201000002` | `add_soft_delete_to_books` | Adds `deleted_at` column for soft deletes |
+
+#### Migration Commands
+
+```bash
+# Run migrations
+make migrate
+
+# Rollback last migration
+make rollback
+
+# Rollback to specific migration
+make rollback-to id=20241201000001_add_indexes_to_books
+
+# Check migration status
+make status
+
+# Show applied migrations
+make applied
+
+# Reset database (rollback all + migrate)
+make db-reset
+```
+
+#### Creating New Migrations
+
+Use the migration generator script:
+
+```bash
+# Generate a new migration
+./scripts/generate_migration.sh add_user_table
+
+# This creates: 20241201143000_add_user_table.go
+```
+
+**Manual Steps:**
+1. Edit the generated migration file
+2. Add the migration to `migration_manager.go`
+3. Test with `make migrate`
+4. Rollback if needed with `make rollback`
+
+#### Migration File Structure
+
+```go
+// 20241201143000_add_user_table.go
+package migrations
+
+import (
+    "github.com/go-gormigrate/gormigrate/v2"
+    "gorm.io/gorm"
+)
+
+// AddUserTable adds user table
+func AddUserTable() *gormigrate.Migration {
+    return &gormigrate.Migration{
+        ID: "20241201143000_add_user_table",
+        Migrate: func(tx *gorm.DB) error {
+            // Migration logic
+            return nil
+        },
+        Rollback: func(tx *gorm.DB) error {
+            // Rollback logic
+            return nil
+        },
+    }
+}
+```
+
+### Manual Database Operations
+
+#### PostgreSQL
+```bash
+# Connect to database
+psql -h localhost -U postgres -d library_db
+
+# View tables
+\dt
+
+# View table structure
+\d books
+
+# View migration history
+SELECT * FROM schema_migrations ORDER BY id;
+```
 
 ## Environment Variables
 
@@ -147,46 +380,6 @@ NEXT_PUBLIC_API_VERSION=v1
 NEXT_PUBLIC_APP_NAME="Library Management System"
 NEXT_PUBLIC_DEBUG=true
 ```
-
-## Quick Start
-
-### 1. Clone the repository
-```bash
-git clone <repository-url>
-cd byfood-assignment
-```
-
-### 2. Set up environment variables
-```bash
-cp env.example .env
-# Edit .env with your configuration
-```
-
-### 3. Set up database
-
-```bash
-./setup-postgres.sh
-```
-
-### 4. Backend Setup
-```bash
-cd backend
-cp env.example .env
-go mod tidy
-go run cmd/main.go
-```
-
-The backend will start on `http://localhost:8080`
-
-### 5. Frontend Setup
-```bash
-cd frontend
-cp env.example .env.local
-npm install
-npm run dev
-```
-
-The frontend will start on `http://localhost:3000`
 
 ## API Endpoints
 
