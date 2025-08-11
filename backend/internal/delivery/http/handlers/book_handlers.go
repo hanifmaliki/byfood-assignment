@@ -158,7 +158,14 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, book)
+	// Get the updated book to return with proper timestamps
+	updatedBook, err := h.bookUseCase.GetBook(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve updated book"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedBook)
 }
 
 // DeleteBook handles DELETE /api/books/:id

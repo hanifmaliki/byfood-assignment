@@ -84,10 +84,13 @@ func (uc *BookUseCase) UpdateBook(id string, book *entities.Book) error {
 		}
 	}
 
-	// Set the ID for the update
-	book.ID = id
+	// Preserve existing data and update only the provided fields
+	existingBook.Title = book.Title
+	existingBook.Author = book.Author
+	existingBook.Year = book.Year
+	existingBook.ISBN = book.ISBN
 
-	return uc.bookRepo.Update(book)
+	return uc.bookRepo.Update(existingBook)
 }
 
 // DeleteBook deletes a book (soft delete)

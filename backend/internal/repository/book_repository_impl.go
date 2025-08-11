@@ -46,7 +46,9 @@ func (r *BookRepositoryImpl) GetAll() ([]entities.Book, error) {
 
 // Update updates a book
 func (r *BookRepositoryImpl) Update(book *entities.Book) error {
-	return r.db.Save(book).Error
+	// Use Updates with a struct to only update non-zero fields and preserve timestamps
+	// This automatically sets updated_at without affecting created_at
+	return r.db.Model(book).Updates(book).Error
 }
 
 // Delete deletes a book (soft delete)
