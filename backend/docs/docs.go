@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/books": {
             "get": {
-                "description": "Retrieve all books from the library",
+                "description": "Retrieve all books from the library. Returns an array of all active (non-deleted) books with their complete information including timestamps.",
                 "consumes": [
                     "application/json"
                 ],
@@ -30,18 +30,24 @@ const docTemplate = `{
                 "summary": "Get all books",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of all books retrieved successfully",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/entities.Book"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             },
             "post": {
-                "description": "Create a new book in the library",
+                "description": "Create a new book in the library. The system will automatically generate a unique ID and set creation/update timestamps. ISBN must be unique and between 10-13 characters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -54,7 +60,7 @@ const docTemplate = `{
                 "summary": "Create a new book",
                 "parameters": [
                     {
-                        "description": "Book information",
+                        "description": "Book information including title, author, year, and ISBN",
                         "name": "book",
                         "in": "body",
                         "required": true,
@@ -65,9 +71,70 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Book created successfully with generated ID and timestamps",
                         "schema": {
                             "$ref": "#/definitions/entities.Book"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Validation error or ISBN already exists",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/books/search": {
+            "get": {
+                "description": "Search books by title, author, or year. All parameters are optional and can be combined for advanced filtering.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Search books",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by title (case-insensitive partial match)",
+                        "name": "title",
+                        "in": "query",
+                        "example": "Gatsby"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by author (case-insensitive partial match)",
+                        "name": "author",
+                        "in": "query",
+                        "example": "Fitzgerald"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Search by exact publication year",
+                        "name": "year",
+                        "in": "query",
+                        "example": 1925
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search results returned successfully",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entities.Book"
+                            }
                         }
                     },
                     "400": {
@@ -87,7 +154,7 @@ const docTemplate = `{
         },
         "/books/deleted": {
             "get": {
-                "description": "Retrieve all soft-deleted books",
+                "description": "Retrieve all soft-deleted books from the library. These books have been marked as deleted but remain in the database with deleted_at timestamps. They can be restored using the restore endpoint.",
                 "consumes": [
                     "application/json"
                 ],
@@ -100,70 +167,12 @@ const docTemplate = `{
                 "summary": "Get deleted books",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of deleted books retrieved successfully",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/entities.Book"
                             }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/books/search": {
-            "get": {
-                "description": "Search books by title, author, or year",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Search books",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Search by title",
-                        "name": "title",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search by author",
-                        "name": "author",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Search by year",
-                        "name": "year",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/entities.Book"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
@@ -177,7 +186,7 @@ const docTemplate = `{
         },
         "/books/{id}": {
             "get": {
-                "description": "Retrieve a specific book by its ID",
+                "description": "Retrieve a specific book by its unique identifier. Returns the complete book information including all timestamps.",
                 "consumes": [
                     "application/json"
                 ],
@@ -191,21 +200,22 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book ID",
+                        "description": "Unique identifier of the book to retrieve",
                         "name": "id",
                         "in": "path",
-                        "required": true
+                        "required": true,
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Book retrieved successfully",
                         "schema": {
                             "$ref": "#/definitions/entities.Book"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Not Found - Book with specified ID does not exist",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -219,7 +229,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update an existing book in the library",
+                "description": "Update an existing book in the library. Only the specified fields will be updated, and the updated_at timestamp will be automatically set. ISBN must remain unique if changed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -233,13 +243,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book ID",
+                        "description": "Unique identifier of the book to update",
                         "name": "id",
                         "in": "path",
-                        "required": true
+                        "required": true,
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
                     },
                     {
-                        "description": "Updated book information",
+                        "description": "Updated book information (all fields are required)",
                         "name": "book",
                         "in": "body",
                         "required": true,
@@ -250,19 +261,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Book updated successfully with new updated_at timestamp",
                         "schema": {
                             "$ref": "#/definitions/entities.Book"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Bad Request - Validation error or ISBN already exists",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Not Found - Book with specified ID does not exist",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -276,7 +287,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Soft delete a book from the library",
+                "description": "Soft delete a book from the library. The book is marked as deleted but remains in the database with a deleted_at timestamp. It can be restored later using the restore endpoint.",
                 "consumes": [
                     "application/json"
                 ],
@@ -286,81 +297,32 @@ const docTemplate = `{
                 "tags": [
                     "books"
                 ],
-                "summary": "Delete a book",
+                "summary": "Delete a book (soft delete)",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book ID",
+                        "description": "Unique identifier of the book to delete",
                         "name": "id",
                         "in": "path",
-                        "required": true
+                        "required": true,
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Book soft-deleted successfully",
                         "schema": {
                             "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Bad Request - Invalid book ID",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/books/{id}/permanent": {
-            "delete": {
-                "description": "Permanently delete a book from the library",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Permanently delete a book",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Book ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
+                        "description": "Not Found - Book with specified ID does not exist",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -376,7 +338,7 @@ const docTemplate = `{
         },
         "/books/{id}/restore": {
             "post": {
-                "description": "Restore a soft-deleted book",
+                "description": "Restore a soft-deleted book by clearing the deleted_at timestamp. The book becomes active again and can be accessed through normal endpoints.",
                 "consumes": [
                     "application/json"
                 ],
@@ -390,21 +352,73 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book ID",
+                        "description": "Unique identifier of the soft-deleted book to restore",
                         "name": "id",
                         "in": "path",
-                        "required": true
+                        "required": true,
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Book restored successfully",
                         "schema": {
                             "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Bad Request - Invalid book ID",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/books/{id}/permanent": {
+            "delete": {
+                "description": "Permanently delete a book from the library. This operation cannot be undone and will remove the book completely from the database. Use with caution.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Permanently delete a book",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Unique identifier of the book to permanently delete",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Book permanently deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid book ID",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Book with specified ID does not exist",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -420,7 +434,7 @@ const docTemplate = `{
         },
         "/url/process": {
             "post": {
-                "description": "Process a URL according to the specified operation (canonical, redirection, or all)",
+                "description": "Process a URL according to the specified operation. Supports three operations: 'canonical' (removes tracking parameters), 'redirection' (follows redirects), and 'all' (combines both operations).",
                 "consumes": [
                     "application/json"
                 ],
@@ -433,7 +447,7 @@ const docTemplate = `{
                 "summary": "Process URL",
                 "parameters": [
                     {
-                        "description": "URL processing request",
+                        "description": "URL processing request with URL and operation type",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -444,13 +458,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "URL processed successfully",
                         "schema": {
                             "$ref": "#/definitions/entities.URLResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Bad Request - Invalid URL or operation",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -463,118 +477,214 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/health": {
+            "get": {
+                "description": "Health check endpoint to verify service status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "Service is healthy",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "ok"
+                                },
+                                "service": {
+                                    "type": "string",
+                                    "example": "Library Management System API"
+                                },
+                                "version": {
+                                    "type": "string",
+                                    "example": "1.0"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
         "entities.Book": {
             "type": "object",
+            "description": "A book entity representing a book in the library",
             "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
                 "id": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000",
+                    "description": "Unique identifier for the book"
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "The Great Gatsby",
+                    "description": "Title of the book"
                 },
-                "updated_at": {
-                    "type": "string"
+                "author": {
+                    "type": "string",
+                    "example": "F. Scott Fitzgerald",
+                    "description": "Author of the book"
                 },
                 "year": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1925,
+                    "description": "Publication year of the book"
+                },
+                "isbn": {
+                    "type": "string",
+                    "example": "978-0743273565",
+                    "description": "International Standard Book Number"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2024-01-15T10:30:00Z",
+                    "description": "Timestamp when the book was created"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2024-01-15T14:45:00Z",
+                    "description": "Timestamp when the book was last updated"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": null,
+                    "description": "Timestamp when the book was soft-deleted (null if not deleted)"
                 }
             }
         },
         "entities.URLRequest": {
             "type": "object",
+            "description": "Request for URL processing operations",
+            "required": [
+                "url",
+                "operation"
+            ],
             "properties": {
-                "operation": {
-                    "type": "string"
-                },
                 "url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "https://example.com/page?utm_source=google&utm_medium=cpc",
+                    "description": "The URL to be processed"
+                },
+                "operation": {
+                    "type": "string",
+                    "example": "canonical",
+                    "description": "The type of processing operation (canonical, redirection, or all)",
+                    "enum": [
+                        "canonical",
+                        "redirection",
+                        "all"
+                    ]
                 }
             }
         },
         "entities.URLResponse": {
             "type": "object",
+            "description": "Response containing the processed URL",
             "properties": {
                 "processed_url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "https://example.com/page",
+                    "description": "The processed URL after applying the specified operation"
                 }
             }
         },
         "handlers.CreateBookRequest": {
             "type": "object",
+            "description": "Request model for creating a new book",
             "required": [
-                "author",
-                "isbn",
                 "title",
-                "year"
+                "author",
+                "year",
+                "isbn"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "type": "string"
-                },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "To Kill a Mockingbird",
+                    "description": "Title of the book to create"
+                },
+                "author": {
+                    "type": "string",
+                    "example": "Harper Lee",
+                    "description": "Author of the book to create"
                 },
                 "year": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1960,
+                    "description": "Publication year of the book to create"
+                },
+                "isbn": {
+                    "type": "string",
+                    "example": "978-0446310789",
+                    "description": "International Standard Book Number (10-13 characters)"
                 }
             }
         },
         "handlers.ErrorResponse": {
             "type": "object",
+            "description": "Standard error response format",
             "properties": {
                 "error": {
-                    "description": "Error message\nexample: invalid request payload",
-                    "type": "string"
+                    "description": "Error message describing what went wrong",
+                    "type": "string",
+                    "example": "book ISBN must be between 10 and 13 characters"
                 }
             }
         },
         "handlers.MessageResponse": {
             "type": "object",
+            "description": "Standard message response format",
             "properties": {
                 "message": {
-                    "description": "Informational message\nexample: operation completed successfully",
-                    "type": "string"
+                    "description": "Informational message about the operation result",
+                    "type": "string",
+                    "example": "Book deleted successfully"
                 }
             }
         },
         "handlers.UpdateBookRequest": {
             "type": "object",
+            "description": "Request model for updating an existing book",
             "required": [
-                "author",
-                "isbn",
                 "title",
-                "year"
+                "author",
+                "year",
+                "isbn"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "type": "string"
-                },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "To Kill a Mockingbird (Updated Edition)",
+                    "description": "Updated title of the book"
+                },
+                "author": {
+                    "type": "string",
+                    "example": "Harper Lee",
+                    "description": "Updated author of the book"
                 },
                 "year": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1960,
+                    "description": "Updated publication year of the book"
+                },
+                "isbn": {
+                    "type": "string",
+                    "example": "978-0446310789",
+                    "description": "Updated International Standard Book Number (10-13 characters)"
                 }
             }
         }
