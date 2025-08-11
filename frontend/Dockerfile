@@ -29,7 +29,6 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 
 # Expose port
 EXPOSE 3000
